@@ -1,5 +1,28 @@
 /*
- * AS5040.cpp - Arduino library for AMS AS5040 magnetic rotary encoder chip
+ * AS5045.h - Arduino library for AMS AS5045 magnetic rotary encoder chip
+ * version 1.0 2014-04-22
+ *
+ * Copyright (c) 2014 Dash (Wenchang Zhang).  All rights reserved.
+ *
+ 
+ *  This is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  A copy of the GNU Lesser General Public License, <http://www.gnu.org/licenses/>.
+ *
+*/ 
+
+
+//Mark's original comment:
+/*
+ * AS5040.h - Arduino library for AMS AS5040 magnetic rotary encoder chip
  * version 1.0 2014-03-05
  *
  * Copyright (c) 2014 Mark Tillotson.  All rights reserved.
@@ -27,10 +50,9 @@
   #include "WProgram.h"
 #endif
 
-#include "AS5040.h"
+#include "AS5045.h"
 
-
-AS5040::AS5040 (byte pinCLK, byte pinCS, byte pinDO, byte pinPROG) 
+AS5045::AS5045 (byte pinCLK, byte pinCS, byte pinDO, byte pinPROG) 
 {
   _pinCLK  = pinCLK ;
   _pinCS   = pinCS ;
@@ -40,33 +62,38 @@ AS5040::AS5040 (byte pinCLK, byte pinCS, byte pinDO, byte pinPROG)
   _status  = 0xFF ;  // invalid status
 }
 
-boolean AS5040::begin ()
+boolean AS5045::begin ()
 {
-  return begin (0) ;
+	if(_pinPROG == 0xFF)
+		return init();
+	else
+		return progOTP (0) ;
 }
 
-boolean AS5040::begin (byte mode)
+boolean AS5045::progOTP (byte mode)
 {
-  return begin (mode, false, 0) ;
+  return progOTP (mode, false, 0) ;
 }
 
-boolean AS5040::begin (byte mode, boolean reverse, unsigned int offset)
+boolean AS5045::progOTP (byte mode, boolean reverse, unsigned int offset)
 {
+//configuration 16 BIT: CCW + Z[11:0] + PWM disable + MagCompEn + PWMhalfEn
+//mode : PWM disable + MagCompEn + PWMhalfEn
   int config_word =
     (reverse ? 0x8000 : 0x0000) | 
-    ((offset & 0x3FF) << 5) |
-    (mode & 0x1F) ;
+    ((offset & 0xFFF) << 3) |
+    (mode & 0x07) ;
 
   pinMode (_pinCLK, OUTPUT) ;  digitalWrite (_pinCLK, HIGH) ;
   if (_pinPROG != 0xFF)
   {
     pinMode (_pinPROG, OUTPUT) ; digitalWrite (_pinPROG, LOW) ;
   }
-  pinMode (_pinCS, OUTPUT) ;   digitalWrite (_pinCS, HIGH) ;
+  pinMode (_pinCS, OUTPUT) ;   digitalWrite (_pinCS, LOW) ;
   pinMode (_pinDO, INPUT_PULLUP) ;
 
   byte count = 0 ;
-  while (read (), (_status & AS5040_STATUS_OCF) == 0)
+  while (read (), (_status & AS5045_STATUS_OCF) == 0)
   {
     if (count > 30)
       return false ; // failed to initialize
@@ -79,10 +106,13 @@ boolean AS5040::begin (byte mode, boolean reverse, unsigned int offset)
     // no initial program sequence, we're done already
     return true ;
   }
-  digitalWrite (_pinCS, LOW) ;
-  delayMicroseconds (1) ;
+  
+  //begin program OTP register sequence
   digitalWrite (_pinCLK, LOW) ;
-  delayMicroseconds (1) ;
+  digitalWrite (_pinCS, LOW) ;
+  digitalWrite (_pinPROG, LOW) ;
+  delayMicroseconds (5) ;
+  
   digitalWrite (_pinPROG, HIGH) ;
   delayMicroseconds (5) ;
   digitalWrite (_pinCS, HIGH) ;
@@ -103,19 +133,44 @@ boolean AS5040::begin (byte mode, boolean reverse, unsigned int offset)
   delayMicroseconds (1) ;
   digitalWrite (_pinCS, LOW) ;
   delayMicroseconds (1) ;
-  digitalWrite (_pinCS, HIGH) ; // ready for reads
-  delayMicroseconds (1) ;
-  digitalWrite (_pinCLK, HIGH) ;
+  digitalWrite (_pinCLK, LOW) ;
   return true ;
 }
 
+boolean AS5045::init ()
+{
+
+  pinMode (_pinCLK, OUTPUT);
+  digitalWrite (_pinCLK, LOW);
+  
+  pinMode (_pinCS, OUTPUT);
+  digitalWrite (_pinCS, LOW);
+  
+  //pinMode (_pinDO, INPUT_PULLUP);
+  pinMode (_pinDO, INPUT);
+  
+  byte count = 0 ;
+  
+  while (read (), (_status & AS5045_STATUS_OCF) == 0)
+  {
+    Serial.print("status: ");
+	Serial.println(_status, BIN);
+    if (count > 30)
+      return false ; // failed to initialize
+    delay (1) ;
+    count ++ ;
+  }
+  
+  return true;
+  
+}
 
 // read position value, squirrel away status
-unsigned int AS5040::read ()
+unsigned int AS5045::read ()
 {
   digitalWrite (_pinCS, LOW) ;
   unsigned int value = 0 ;
-  for (byte i = 0 ; i < 10 ; i++)
+  for (byte i = 0 ; i < 12 ; i++)
   {
     digitalWrite (_pinCLK, LOW) ;
     digitalWrite (_pinCLK, HIGH) ;
@@ -134,7 +189,7 @@ unsigned int AS5040::read ()
   return value ;
 }
 
-byte AS5040::even_parity (byte val)
+byte AS5045::even_parity (byte val)
 {
   val = (val >> 1) ^ val ;
   val = (val >> 2) ^ val ;
@@ -144,20 +199,20 @@ byte AS5040::even_parity (byte val)
 
 
 // raw status from latest read, 5 bit value
-byte AS5040::status ()
+byte AS5045::status ()
 {
   return _status ;
 }
 
 // indicate if latest status implies valid data
-boolean AS5040::valid ()
+boolean AS5045::valid ()
 {
   return _parity == 0 && (_status & 0x18) == 0x10 && (_status & 3) != 3 ;
 }
 
 // motion in the Z-axis, +1 means mag field increasing (magnet approaching chip),
 // -1 is decreasing, 0 is stable.
-int AS5040::Zaxis ()
+int AS5045::Zaxis ()
 {
   switch (_status & 0x3)
     {

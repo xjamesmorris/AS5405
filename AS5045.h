@@ -1,4 +1,27 @@
 /*
+ * AS5045.h - Arduino library for AMS AS5045 magnetic rotary encoder chip
+ * version 1.0 2014-04-22
+ *
+ * Copyright (c) 2014 Dash (Wenchang Zhang).  All rights reserved.
+ *
+ 
+ *  This is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  A copy of the GNU Lesser General Public License, <http://www.gnu.org/licenses/>.
+ *
+*/ 
+
+
+//Mark's original comment:
+/*
  * AS5040.h - Arduino library for AMS AS5040 magnetic rotary encoder chip
  * version 1.0 2014-03-05
  *
@@ -20,9 +43,9 @@
  *  along with "Mark's AS5040 library for Arduino".
  *  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#ifndef AS5040_h
-#define AS5040_h
+ 
+#ifndef AS5045_h
+#define AS5045_h
 
 #if defined(ARDUINO) && ARDUINO >= 100
   #include "Arduino.h"
@@ -30,34 +53,27 @@
   #include "WProgram.h"
 #endif
 
-// mode defines
-#define AS5040_QUADRATURE  0x1
-#define AS5040_STEPDIR     0x2
-#define AS5040_COMMUTATE   0x3
-#define AS5040_COMMUTATE_4POLE 0xB
-
-#define AS5040_10BIT  0x0
-#define AS5040_9BIT   0x4
-#define AS5040_8BIT   0x8
-#define AS5040_7BIT   0xC
-
-#define AS5040_WIDE_IDX  0x10
+//define mode : PWM disable + MagCompEn + PWMhalfEn
+#define AS5045_PWM_DIS 0x04
+#define AS5045_MAG_COMP_EN 0x02
+#define AS5045_PWM_HALF_EN 0xx01
 
 // defines for 5 bit _status value
-#define AS5040_STATUS_OCF 0x10
-#define AS5040_STATUS_COF 0x08
-#define AS5040_STATUS_LIN 0x04
-#define AS5040_STATUS_MAGINC 0x02
-#define AS5040_STATUS_MAGDEC 0x01
+#define AS5045_STATUS_OCF 0x10
+#define AS5045_STATUS_COF 0x08
+#define AS5045_STATUS_LIN 0x04
+#define AS5045_STATUS_MAGINC 0x02
+#define AS5045_STATUS_MAGDEC 0x01
 
-class AS5040
+class AS5045
 {
  public:
-  AS5040 (byte pinCLK, byte pinCS, byte pinDO, byte pinPROG = 0xFF) ;
+  AS5045 (byte pinCLK, byte pinCS, byte pinDO, byte pinPROG = 0xFF) ;
 
   boolean begin () ;
-  boolean begin (byte mode) ;
-  boolean begin (byte mode, boolean reverse, unsigned int offset) ;
+  boolean progOTP (byte mode) ;
+  boolean progOTP (byte mode, boolean reverse, unsigned int offset) ;
+  boolean init ();
 
   unsigned int read () ; 
   byte status () ;
