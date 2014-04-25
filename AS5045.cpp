@@ -20,7 +20,7 @@
 */ 
 
 
-//Mark's original comment:
+//Mark's original statement:
 /*
  * AS5040.h - Arduino library for AMS AS5040 magnetic rotary encoder chip
  * version 1.0 2014-03-05
