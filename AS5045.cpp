@@ -52,10 +52,10 @@
 
 #include "AS5045.h"
 
-AS5045::AS5045 (byte pinCLK, byte pinCS, byte pinDO, byte pinPROG) 
+AS5045::AS5045 (byte pinCS, byte pinCLK, byte pinDO, byte pinPROG) 
 {
-  _pinCLK  = pinCLK ;
   _pinCS   = pinCS ;
+  _pinCLK  = pinCLK ;
   _pinDO   = pinDO ;
   _pinPROG = pinPROG ;
 

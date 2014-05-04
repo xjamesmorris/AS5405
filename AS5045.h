@@ -68,7 +68,7 @@
 class AS5045
 {
  public:
-  AS5045 (byte pinCLK, byte pinCS, byte pinDO, byte pinPROG = 0xFF) ;
+  AS5045 (byte pinCS, byte pinCLK, byte pinDO, byte pinPROG = 0xFF) ;
 
   boolean begin () ;
   boolean progOTP (byte mode) ;
