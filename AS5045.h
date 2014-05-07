@@ -71,11 +71,13 @@ class AS5045
   AS5045 (byte pinCS, byte pinCLK, byte pinDO, byte pinPROG = 0xFF) ;
 
   boolean begin () ;
+  boolean begin (int mag_offset) ;
   boolean progOTP (byte mode) ;
   boolean progOTP (byte mode, boolean reverse, unsigned int offset) ;
   boolean init ();
 
-  unsigned int read () ; 
+  unsigned int read () ;
+  unsigned int read_bias () ;
   byte status () ;
   boolean valid () ;
   int Zaxis () ;
@@ -91,6 +93,9 @@ class AS5045
   byte _parity ;
 
   byte even_parity (byte val) ;
+  
+  int _mag_offset;
+  
 } ;
 
 

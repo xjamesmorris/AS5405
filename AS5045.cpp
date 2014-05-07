@@ -62,7 +62,13 @@ AS5045::AS5045 (byte pinCS, byte pinCLK, byte pinDO, byte pinPROG)
   _status  = 0xFF ;  // invalid status
 }
 
-boolean AS5045::begin ()
+/*
+if you use this function to program OTP,
+The OTP would be set as default mode, no reverse, zero offset,
+since OTP is a one-time stuff, I personally don't suggest use this function to program OTP,
+unless you don't want no one including yourself to change the OTP afterwards.
+*/
+boolean AS5045::begin ( )
 {
 	if(_pinPROG == 0xFF)
 		return init();
@@ -70,11 +76,24 @@ boolean AS5045::begin ()
 		return progOTP (0) ;
 }
 
+boolean AS5045::begin (int mag_offset)
+{
+	if(_pinPROG == 0xFF)
+	{
+		return init();
+		_mag_offset = mag_offset;
+	}
+	else
+		return progOTP (0) ;
+}
+
+//program OTP but only set the mode byte
 boolean AS5045::progOTP (byte mode)
 {
   return progOTP (mode, false, 0) ;
 }
 
+//use this function to directly program the OTP
 boolean AS5045::progOTP (byte mode, boolean reverse, unsigned int offset)
 {
 //configuration 16 BIT: CCW + Z[11:0] + PWM disable + MagCompEn + PWMhalfEn
@@ -186,6 +205,43 @@ unsigned int AS5045::read ()
   digitalWrite (_pinCS, HIGH) ;
   _parity = even_parity (value >> 2) ^ even_parity (value & 3) ^ even_parity (status) ;
   _status = status >> 1 ;
+  return value ;
+}
+
+// read position value with bias (with 4096/round support only), squirrel away status 
+unsigned int AS5045::read_bias ()
+{
+  digitalWrite (_pinCS, LOW) ;
+  unsigned int value = 0 ;
+  for (byte i = 0 ; i < 12 ; i++)
+  {
+    digitalWrite (_pinCLK, LOW) ;
+    digitalWrite (_pinCLK, HIGH) ;
+    value = (value << 1) | digitalRead (_pinDO) ;
+  }
+  byte status = 0 ;
+  for (byte i = 0 ; i < 6 ; i++)
+  {
+    digitalWrite (_pinCLK, LOW) ;
+    digitalWrite (_pinCLK, HIGH) ;
+    status = (status << 1) | digitalRead (_pinDO) ;
+  }
+  digitalWrite (_pinCS, HIGH) ;
+  _parity = even_parity (value >> 2) ^ even_parity (value & 3) ^ even_parity (status) ;
+  _status = status >> 1 ;
+  
+  /*
+  set the offset value and take care of the potential overflow
+  change if->while if you really think the plus time cost is acceptable
+  running -= / += twice would indicate a mistake in previous reading stage
+  so I chose to use if instead of while
+  */
+  if(value + _mag_offset > 4096)
+	value -= 4096;
+	
+  if(value + _mag_offset < 0)
+	value += 4096;
+  
   return value ;
 }
 
