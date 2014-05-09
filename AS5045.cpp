@@ -211,35 +211,21 @@ unsigned int AS5045::read ()
 // read position value with bias (with 4096/round support only), squirrel away status 
 unsigned int AS5045::read_bias ()
 {
-  digitalWrite (_pinCS, LOW) ;
   unsigned int value = 0 ;
-  for (byte i = 0 ; i < 12 ; i++)
-  {
-    digitalWrite (_pinCLK, LOW) ;
-    digitalWrite (_pinCLK, HIGH) ;
-    value = (value << 1) | digitalRead (_pinDO) ;
-  }
-  byte status = 0 ;
-  for (byte i = 0 ; i < 6 ; i++)
-  {
-    digitalWrite (_pinCLK, LOW) ;
-    digitalWrite (_pinCLK, HIGH) ;
-    status = (status << 1) | digitalRead (_pinDO) ;
-  }
-  digitalWrite (_pinCS, HIGH) ;
-  _parity = even_parity (value >> 2) ^ even_parity (value & 3) ^ even_parity (status) ;
-  _status = status >> 1 ;
-  
+  value = read();
   /*
   set the offset value and take care of the potential overflow
   change if->while if you really think the plus time cost is acceptable
   running -= / += twice would indicate a mistake in previous reading stage
   so I chose to use if instead of while
   */
-  if(value + _mag_offset > 4096)
+  
+  value += _mag_offset;
+  
+  if(value > 4096)
 	value -= 4096;
 	
-  if(value + _mag_offset < 0)
+  if(value < 0)
 	value += 4096;
   
   return value ;
