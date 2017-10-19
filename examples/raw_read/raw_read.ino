@@ -26,7 +26,7 @@
 #define CLKpin  3
 #define DOpin   4
 
-AS5045 enc (CLKpin, CSpin, DOpin) ;
+AS5045 enc (CSpin, CLKpin, DOpin) ;
 
 // didn't program the OTP
 void setup ()
