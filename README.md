@@ -59,7 +59,7 @@ boolean progOTP (byte mode);
 boolean progOTP (byte mode, boolean reverse, unsigned int offset);
 ```
 
-### Credit
+# Credit
 
 Mark's AS5040 library for Arduino
 https://github.com/MarkTillotson/AS5040.git
